@@ -1,0 +1,16 @@
+name: Build macOS app
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Universal app
+        run: ./scripts/build.sh
+      - name: Verify archive
+        run: unzip -t dist/KeyDrop-macOS.zip
