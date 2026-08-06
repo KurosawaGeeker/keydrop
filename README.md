@@ -1,6 +1,6 @@
 # KeyDrop
 
-<img width="1254" height="1254" alt="image" src="https://github.com/user-attachments/assets/8eacdb1a-f6ce-4219-90a0-03393b11d45c" />
+<img width="1254" height="1254" alt="exec-c8955d14-52fb-4fe9-bfea-7119bf274b0b" src="https://github.com/user-attachments/assets/95ae51d2-fc61-4a48-ac29-18865f16a4ff" />
 
 
 一个只做一件事的 macOS 小工具：把 API Key 变成可以直接粘贴到 LLM 对话框里的文件。
@@ -10,7 +10,6 @@ KeyDrop 适合需要在 Codex、ChatGPT、Claude、Cursor 或其他支持文件�
 你是否被 Agent 拒绝过处理明文 API Key？你是否会去访达/terminal 里新建一个文本文件-再粘贴 apikey-保存-关闭-复制-去 agent 对话框粘贴？
 
 ohno！不要！这太麻烦了！
-
 
 
 ## 为什么用 KeyDrop
