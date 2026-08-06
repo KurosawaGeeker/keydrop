@@ -5,12 +5,15 @@
 
 一个只做一件事的 macOS 小工具：把 API Key 变成可以直接粘贴到 LLM 对话框里的文件。
 
+[![LINUX DO Community](https://img.shields.io/badge/LINUX%20DO-Community-FFB000.svg)](https://linux.do)
+
 KeyDrop 适合需要在 Codex、ChatGPT、Claude、Cursor 或其他支持文件粘贴的 LLM 输入框中安全地输入 API Key 的场景。
 
 你是否被 Agent 拒绝过处理明文 API Key？你是否会去访达/terminal 里新建一个文本文件-再粘贴 apikey-保存-关闭-复制-去 agent 对话框粘贴？
 
 ohno！不要！这太麻烦了！
 
+本项目积极参与并认可 [LINUX DO 社区](https://linux.do)。
 
 ## 为什么用 KeyDrop
 
