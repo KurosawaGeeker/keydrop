@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="zh-CN">
+  <meta charset="utf-8" /><title>KeyDrop 本机假密钥测试</title>
+  <style>
+    body {
+      font: 16px system-ui;
+      background: #ddd;
+      margin: 0;
+      padding: 40px;
+    }
+    main {
+      max-width: 800px;
+      margin: auto;
+    }
+    h1 {
+      font-size: 20px;
+    }
+    section {
+      background: white;
+      border-radius: 24px;
+      padding: 32px;
+      margin: 20px 0;
+    }
+    h2 {
+      font-size: 25px;
+      margin-top: 0;
+    }
+    p {
+      color: #777;
+      line-height: 1.7;
+    }
+    .field {
+      display: flex;
+      align-items: center;
+      border: 1px solid #ddd;
+      border-radius: 35px;
+      padding: 7px 12px;
+      background: #f4f5f6;
+      gap: 8px;
+    }
+    input {
+      flex: 1;
+      min-width: 0;
+      border: 0;
+      background: none;
+      font: 15px monospace;
+    }
+    button,
+    .ds-button {
+      cursor: pointer;
+      padding: 12px 18px;
+      border: 0;
+      border-radius: 24px;
+      background: #424349;
+      color: white;
+      font: 16px system-ui;
+    }
+    #paste {
+      width: 100%;
+      height: 100px;
+      border: 2px dashed #8988a6;
+      border-radius: 12px;
+      padding: 12px;
+      box-sizing: border-box;
+      background: white;
+    }
+  </style>
+  <main>
+    <h1>仅本机测试 · 这里的所有密钥均为无效假值</h1>
+    <section class="ds-modal-content ds-modal-content--dialog" role="dialog">
+      <div class="ds-modal-content__header-wrapper">
+        <div class="ds-modal-content__title" style="font-size: 25px">
+          创建 API key
+        </div>
+      </div>
+      <p>
+        按公开前端结构仿制的 DeepSeek 弹窗：普通 div 标题、span 密钥、独立
+        action 容器。
+      </p>
+      <div>
+        <div>
+          <div class="field ds-copyable-text-line">
+            <div
+              class="ds-copyable-text-line__scroll"
+              style="flex: 1; overflow: auto; white-space: nowrap"
+            >
+              <span class="ds-copyable-text-line__text" id="deepseek-key"
+                >sk-keydrop_FAKE_deepseek_0123456789</span
+              >
+            </div>
+            <div
+              class="ds-copyable-text-line__action"
+              style="display: flex; align-items: center"
+            >
+              <div class="ds-copyable-text-line__mask"></div>
+              <div
+                class="ds-button"
+                role="button"
+                tabindex="0"
+                id="deepseek-copy"
+              >
+                <span><span>复制</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section
+      role="dialog"
+      data-slot="dialog-content"
+      aria-labelledby="openai-title"
+    >
+      <header>
+        <div><h2 id="openai-title">Save your API key</h2></div>
+      </header>
+      <p>OpenAI 风格测试：点击 Copy 不产生 Copied 状态，也应该弹窗。</p>
+      <div>
+        <div class="field">
+          <input
+            id="openai-key"
+            readonly
+            value="sk-proj-KEYDROP_FAKE_abcdefghijklmnopqrstuvwxyz"
+          /><button id="openai-copy" aria-label="Copy">
+            <span>Copy</span>
+          </button>
+        </div>
+      </div>
+    </section>
+    <section>
+      <h2>普通内容，不应显示 KeyDrop 图标</h2>
+      <button id="ordinary">Copy URL</button>
+    </section>
+    <section>
+      <h2>真实文件粘贴测试</h2>
+      <p>在这里按 ⌘V，只报告文件名与内容是否匹配，不展示密钥。</p>
+      <div
+        id="paste"
+        contenteditable="true"
+        role="textbox"
+        aria-label="文件粘贴区"
+      ></div>
+      <p id="paste-result" role="status">等待粘贴</p>
+    </section>
+    <script>
+      const fakeValue = (provider) => {
+        const field = document.getElementById(provider + "-key");
+        return field.value ?? field.textContent;
+      };
+      for (const provider of ["deepseek", "openai"])
+        document
+          .getElementById(provider + "-copy")
+          .addEventListener("click", () =>
+            navigator.clipboard.writeText(fakeValue(provider)),
+          );
+      document
+        .getElementById("paste")
+        .addEventListener("paste", async (event) => {
+          event.preventDefault();
+          const file = event.clipboardData.files[0];
+          if (!file) {
+            document.getElementById("paste-result").textContent =
+              "失败：剪贴板不是文件";
+            return;
+          }
+          const content = await file.text();
+          const expected = [
+            fakeValue("deepseek"),
+            fakeValue("openai"),
+            "KEYDROP_LOCAL_QA_ONLY",
+          ];
+          document.getElementById("paste-result").textContent =
+            file.name + " · 文件内容匹配：" + expected.includes(content);
+        });
+    </script>
+  </main>
+</html>
