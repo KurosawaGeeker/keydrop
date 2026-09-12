@@ -1,51 +1,59 @@
 import SwiftUI
 import AppKit
+import Darwin
 
 @MainActor
 final class KeyDropModel: ObservableObject {
-    @Published var apiKey = ""
+    @Published var entries = [KeyEntry()]
+    @Published var format: KeyFormat = .yaml
     @Published var status = "等待输入 API Key"
     @Published var statusIsError = false
-    @Published var isShowingKey = false
+    var hasNames: Bool { entries.contains { !$0.name.isEmpty } }
 
-    private let outputRootURL: URL = {
-        FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("KeyDrop", isDirectory: true)
-    }()
+    var filename: String {
+        hasNames ? "api-key.\(format == .json ? "json" : "yaml")" : "api-key.txt"
+    }
 
-    func readClipboard() {
+    private let outputRootURL = KeyCache.root
+
+    func cleanHistory() {
+        do {
+            let count = try KeyCache.clean()
+            setStatus(count == 0 ? "没有需要清理的历史文件" : "已清理 \(count) 个历史文件")
+        } catch {
+            setStatus("清理未完成，请重试：\(error.localizedDescription)", error: true)
+        }
+    }
+
+    func readClipboard(into id: UUID?) {
         guard let value = NSPasteboard.general.string(forType: .string), !value.isEmpty else {
             setStatus("剪贴板里没有文本", error: true)
             return
         }
 
-        apiKey = value
+        let index = entries.firstIndex { $0.id == id } ?? 0
+        entries[index].value = value
         setStatus("已从剪贴板读取")
     }
 
     func createAndCopyFile() {
-        guard !apiKey.isEmpty else {
-            setStatus("请先输入或读取 API Key", error: true)
-            return
-        }
-
         do {
+            let data = try KeyPayload.encode(entries, format: format)
+            if FileManager.default.fileExists(atPath: outputRootURL.path),
+               try outputRootURL.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink == true {
+                throw KeyPayload.Failure(message: "缓存目录是符号链接，已停止生成")
+            }
             // 每次生成使用独立目录，确保已经粘贴出去的旧文件引用不会被改写。
             let timestamp = DateFormatter.keyDropTimestamp.string(from: Date())
             let uniqueFolderName = "\(timestamp)-\(String(UUID().uuidString.prefix(8)))"
             let folder = outputRootURL.appendingPathComponent(uniqueFolderName, isDirectory: true)
-            let outputURL = folder.appendingPathComponent("api-key.txt", isDirectory: false)
+            let outputURL = folder.appendingPathComponent(filename, isDirectory: false)
 
             try FileManager.default.createDirectory(
                 at: folder,
                 withIntermediateDirectories: true,
                 attributes: [.posixPermissions: 0o700]
             )
-
-            guard let data = apiKey.data(using: .utf8) else {
-                setStatus("API Key 无法编码为 UTF-8", error: true)
-                return
-            }
 
             try data.write(to: outputURL, options: .atomic)
             try FileManager.default.setAttributes(
@@ -83,7 +91,11 @@ private extension DateFormatter {
 
 struct KeyDropView: View {
     @StateObject private var model = KeyDropModel()
-    @FocusState private var fieldIsFocused: Bool
+    @FocusState private var focusedRow: UUID?
+    @State private var activeRow: UUID?
+    @State private var pendingRemoval: UUID?
+    @State private var showingRemoval = false
+    @State private var showingCleanup = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
@@ -123,43 +135,42 @@ struct KeyDropView: View {
                     .foregroundStyle(.secondary)
                     .tracking(0.7)
 
-                HStack(spacing: 8) {
-                    Group {
-                        if model.isShowingKey {
-                            TextField("粘贴或输入 API Key", text: $model.apiKey)
-                        } else {
-                            SecureField("粘贴或输入 API Key", text: $model.apiKey)
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        VStack(spacing: 8) {
+                            ForEach($model.entries) { $entry in
+                                entryRow($entry).id(entry.id)
+                            }
                         }
+                        .padding(1)
                     }
-                    .textFieldStyle(.plain)
-                    .focused($fieldIsFocused)
-                    .font(.system(size: 14, design: .monospaced))
-
-                    Button {
-                        model.isShowingKey.toggle()
-                        fieldIsFocused = true
-                    } label: {
-                        Image(systemName: model.isShowingKey ? "eye.slash" : "eye")
-                            .foregroundStyle(.secondary)
-                            .frame(width: 24, height: 24)
+                    .frame(height: CGFloat(min(model.entries.count, 5)) * 54 - 8)
+                    .onChange(of: model.entries.count) { _ in
+                        if let id = focusedRow { proxy.scrollTo(id) }
                     }
-                    .buttonStyle(.plain)
-                    .help(model.isShowingKey ? "隐藏 API Key" : "显示 API Key")
                 }
-                .padding(.horizontal, 12)
-                .frame(height: 44)
-                .background(Color(nsColor: .controlBackgroundColor))
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .stroke(fieldIsFocused ? Color.accentColor.opacity(0.8) : Color.primary.opacity(0.1), lineWidth: 1)
+
+                if model.hasNames {
+                    HStack {
+                        Text("文件格式").foregroundStyle(.secondary)
+                        Picker("文件格式", selection: $model.format) {
+                            ForEach(KeyFormat.allCases, id: \.self) { format in
+                                Text(format.rawValue).tag(format)
+                            }
+                        }
+                        .labelsHidden()
+                        .pickerStyle(.segmented)
+                        .frame(width: 140)
+                        Spacer()
+                    }
+                    .font(.system(size: 12))
                 }
             }
 
             HStack(spacing: 10) {
                 Button {
-                    model.readClipboard()
-                    fieldIsFocused = true
+                    model.readClipboard(into: activeRow)
+                    focusedRow = activeRow ?? model.entries.first?.id
                 } label: {
                     Label("从剪贴板读取", systemImage: "doc.on.clipboard")
                         .frame(maxWidth: .infinity)
@@ -186,13 +197,28 @@ struct KeyDropView: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                 Spacer()
-                Text("api-key.txt")
+                Text(model.filename)
                     .font(.system(size: 11, design: .monospaced))
                     .foregroundStyle(.tertiary)
             }
+            HStack {
+                Button {
+                    showingCleanup = true
+                } label: {
+                    Label("清理历史文件", systemImage: "trash")
+                }
+                .buttonStyle(.borderless)
+                .alert("清理所有历史密钥文件？", isPresented: $showingCleanup) {
+                    Button("取消", role: .cancel) {}
+                    Button("确认清理", role: .destructive) { model.cleanHistory() }
+                } message: {
+                    Text("将永久删除 KeyDrop 缓存目录中各时间段生成的密钥文件，无法撤销。已复制的本地文件引用将失效；当前输入和其他应用中的副本不受影响。")
+                }
+                Spacer()
+            }
         }
         .padding(26)
-        .frame(width: 470, height: 285)
+        .frame(width: 470)
         .background(
             LinearGradient(
                 colors: [
@@ -204,13 +230,101 @@ struct KeyDropView: View {
             )
         )
         .onAppear {
-            fieldIsFocused = true
+            focusedRow = model.entries.first?.id
+            activeRow = focusedRow
+        }
+        .onChange(of: focusedRow) { id in
+            if let id { activeRow = id }
+        }
+        .alert("移除这一行？", isPresented: $showingRemoval) {
+            Button("取消", role: .cancel) { pendingRemoval = nil }
+            Button("移除", role: .destructive) {
+                if let id = pendingRemoval { removeRow(id) }
+                pendingRemoval = nil
+            }
+        } message: {
+            Text("这一行已填写的名称和 API Key 将被移除。")
+        }
+    }
+
+    private func removeRow(_ id: UUID) {
+        model.entries.removeAll { $0.id == id }
+        activeRow = model.entries.first?.id
+        focusedRow = activeRow
+    }
+
+    private func entryRow(_ binding: Binding<KeyEntry>) -> some View {
+        let entry = binding.wrappedValue
+        return HStack(spacing: 8) {
+            TextField("名称", text: binding.name)
+                .frame(width: 64)
+                .help("可选；留空时生成纯文本")
+                .accessibilityLabel("可选名称")
+            Text(":").foregroundStyle(.tertiary)
+            Group {
+                if entry.isVisible {
+                    TextField("粘贴或输入 API Key", text: binding.value)
+                } else {
+                    SecureField("粘贴或输入 API Key", text: binding.value)
+                }
+            }
+            .focused($focusedRow, equals: entry.id)
+            .accessibilityLabel("API Key")
+            Button {
+                binding.isVisible.wrappedValue.toggle()
+                focusedRow = entry.id
+            } label: {
+                Image(systemName: entry.isVisible ? "eye.slash" : "eye")
+                    .frame(width: 24, height: 24)
+            }
+            .help(entry.isVisible ? "隐藏 API Key" : "显示 API Key")
+            .accessibilityLabel(entry.isVisible ? "隐藏 API Key" : "显示 API Key")
+            if model.entries.count > 1 {
+                Button {
+                    if entry.name.isEmpty && entry.value.isEmpty { removeRow(entry.id) }
+                    else {
+                        pendingRemoval = entry.id
+                        showingRemoval = true
+                    }
+                } label: {
+                    Image(systemName: "minus").frame(width: 20, height: 24)
+                }
+                .help("移除这一行")
+                .accessibilityLabel("移除这一行")
+            }
+            Button {
+                let newEntry = KeyEntry()
+                let index = model.entries.firstIndex { $0.id == entry.id } ?? 0
+                model.entries.insert(newEntry, at: index + 1)
+                focusedRow = newEntry.id
+                activeRow = newEntry.id
+            } label: {
+                Image(systemName: "plus").frame(width: 20, height: 24)
+            }
+            .help("添加 API Key")
+            .accessibilityLabel("添加 API Key")
+        }
+        .textFieldStyle(.plain)
+        .buttonStyle(.plain)
+        .font(.system(size: 13, design: .monospaced))
+        .padding(.horizontal, 12)
+        .frame(height: 44)
+        .background(Color(nsColor: .controlBackgroundColor))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .overlay {
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(focusedRow == entry.id ? Color.accentColor.opacity(0.8) : Color.primary.opacity(0.1), lineWidth: 1)
         }
     }
 }
 
 @main
 struct KeyDropApp: App {
+    init() {
+        // Protect even the temporary file used by Foundation's atomic write.
+        umask(0o077)
+    }
+
     var body: some Scene {
         WindowGroup {
             KeyDropView()

@@ -13,6 +13,8 @@ mkdir -p "$app_path/Contents/MacOS" "$app_path/Contents/Resources" "$binary_dir"
 for arch in arm64 x86_64; do
   xcrun swiftc \
     "$repo_root/Sources/KeyDrop.swift" \
+    "$repo_root/Sources/KeyPayload.swift" \
+    "$repo_root/Sources/KeyCache.swift" \
     -parse-as-library \
     -target "${arch}-apple-macos13.0" \
     -o "$binary_dir/KeyDrop-${arch}" \
@@ -26,10 +28,12 @@ lipo -create \
   -output "$app_path/Contents/MacOS/KeyDrop"
 
 cp "$repo_root/Resources/Info.plist" "$app_path/Contents/Info.plist"
+# Finder metadata can be inherited when building inside Documents.
+xattr -cr "$app_path"
 codesign --force --deep --sign - "$app_path"
 codesign --verify --deep --strict "$app_path"
 
-ditto -c -k --sequesterRsrc --keepParent "$app_path" "$dist_root/KeyDrop-macOS.zip"
+ditto -c -k --norsrc --noextattr --keepParent "$app_path" "$dist_root/KeyDrop-macOS.zip"
 
 echo "Built: $app_path"
 echo "Packaged: $dist_root/KeyDrop-macOS.zip"
