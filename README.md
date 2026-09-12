@@ -1,68 +1,80 @@
+<img src="chrome/extension/assets/icon-128.png" width="72" height="72" alt="KeyDrop：把密钥交给 Agent">
+
 # KeyDrop
 
-<img width="1254" height="1254" alt="exec-c8955d14-52fb-4fe9-bfea-7119bf274b0b" src="https://github.com/user-attachments/assets/95ae51d2-fc61-4a48-ac29-18865f16a4ff" />
+**把 Key 交给你的 Agent。**
 
+将 API Key 生成为文件，直接复制或拖入支持附件的工具。不用再打开编辑器、新建文件、保存，再去找它。
 
-一个只做一件事的 macOS 小工具：把 API Key 变成可以直接粘贴到 LLM 对话框里的文件。
+KeyDrop 的 Drop 是 drag-and-drop：拖入、粘贴、交接。支持原生 macOS 应用，以及 Chrome / EgoLite 浏览器扩展。
 
-[![LINUX DO Community](https://img.shields.io/badge/LINUX%20DO-Community-FFB000.svg)](https://linux.do)
+[浏览器扩展安装说明](chrome/README.md) · [macOS 下载](https://github.com/KurosawaGeeker/keydrop/releases)
 
-KeyDrop 适合需要在 Codex、ChatGPT、Claude、Cursor 或其他支持文件粘贴的 LLM 输入框中安全地输入 API Key 的场景。
+## 一次复制，交接一个文件
 
-你是否被 Agent 拒绝过处理明文 API Key？你是否会去访达/terminal 里新建一个文本文件-再粘贴 apikey-保存-关闭-复制-去 agent 对话框粘贴？
+1. 粘贴 API Key，或手动读取剪贴板。
+2. 点击“生成并复制文件”。文件本身会进入系统剪贴板，不是文件路径文本。
+3. 在支持文件的 Agent 输入框按 `⌘V`。浏览器版也提供拖拽与下载副本。
 
-ohno！不要！这太麻烦了！
+默认只有一个输入行、名称留空，生成 `api-key.txt`，保留原始内容且不追加换行。点击 `+` 才增加一行，多个无名称的 Key 按行写入同一个文件。`−` 移除当前行，已有内容时先确认。
 
-本项目积极参与并认可 [LINUX DO 社区](https://linux.do)。
+需要结构化文件时，可以手动填写名称并选择 JSON 或 YAML。名称必须齐全且不重复，不自动识别名称或拆分密钥。浏览器版始终提供 TXT / JSON / YAML 选择；原生应用在填写名称后显示结构化格式选项。
 
-## 为什么用 KeyDrop
+## 浏览器里的快捷入口
 
-- 只有一个 API Key 输入框，界面简单，开箱即用，无需配置。
-- 可以直接从系统剪贴板读取 API Key。
-- 一键生成 `api-key.txt` 并复制文件到系统剪贴板。Just ctrl + V。
-- API Key 文件只包含原始字符串，不追加换行或其他内容。
-- 原生 macOS 应用，安全、无账号、无网络请求、无第三方服务、无窃取行为。
+为可信网站开启“网站快捷入口”后，KeyDrop 会尝试在 API Key 的复制按钮旁显示自己的标志。
 
-## 使用步骤
+- 点击 KeyDrop 标志：直接生成并复制 `api-key.txt`。
+- 点击网站原来的复制按钮：打开编辑窗口，能确定对应字段时自动填入。
+- 编辑窗口支持眼睛图标切换明文、多行、可选名称、格式选择、再次复制与清理。
+- 所有网站默认关闭，按站点申请权限；不后台轮询剪贴板。
 
-1. 从 [Releases](https://github.com/KurosawaGeeker/keydrop/releases) 下载最新的 `KeyDrop-macOS.zip`。
-2. 解压并打开 `KeyDrop.app`。
-3. 把 API Key 贴到输入框中；
-4. 点击“生成并复制文件”。
-5. 打开 Codex 或其他 LLM 对话框，在目标输入框中按 `⌘V`，即可粘贴这个 API Key 文件。
+浏览器版的文件剪贴板功能依赖本机 macOS 助手。当前未提供 Windows / Linux 助手。不同网站组件可能无法识别，此时可以打开 KeyDrop 手动粘贴；没有访问真实账号来验证所有平台的兼容性。
 
-> 目标应用需要支持粘贴文件或附件。普通文本输入框通常不会把文件引用当作文本插入；此时请使用目标应用的文件上传/附件入口。
+详见[安装、权限与本机测试](chrome/README.md)。
 
-## 文件位置与隐私
+## 隐私边界，说清楚
 
-生成的文件保存在当前用户的缓存目录：
+KeyDrop 本身没有密钥上传、遥测、远程脚本或云端处理。密钥只在本机浏览器、助手进程、剪贴板与生成文件之间流转。
 
-    ~/Library/Caches/KeyDrop/<timestamp>-<id>/api-key.txt
+**文件不等于加密。** 本机处理需要接触明文；把文件提交到在线 Agent 或其他服务后，对方仍可能读取明文。KeyDrop 不保证第三方服务不上传、不入库，也无法阻止同一用户的恶意程序、剪贴板历史或备份读取文件。
 
-KeyDrop 不联网，也不会把 API Key 发送到任何服务器。文件权限设置为当前用户可读写（`0600`）。如果不再需要历史 Key，请手动删除 `~/Library/Caches/KeyDrop/` 下对应的目录。
+生成文件保存在：
 
-## 系统要求
+```text
+~/Library/Caches/KeyDrop/<timestamp>-<id>/api-key.txt
+```
 
-- macOS 13 Ventura 或更高版本
-- Apple Silicon 或 Intel Mac
+目录权限为 `0700`，文件权限为 `0600`。每次生成使用独立路径，避免改写之前复制出去的文件引用。浏览器版“再次复制”复用同一文件，不生成额外副本。
+
+## 用完后清理
+
+原生应用的“清理历史文件”，或浏览器版“文件清理 → 清理临时文件”，会先要求确认，再删除 KeyDrop 缓存内各时间段的已生成文件。不会扫描整个用户目录，也不会删除不属于 KeyDrop 的文件或符号链接。
+
+下载副本需单独清理。移动过的文件、备份、已上传附件和第三方剪贴板历史不在清理范围内。删除不可撤销，但不是安全擦除。关闭编辑窗口只丢弃当前输入，不删除已生成文件。
 
 ## 从源码构建
 
-需要安装 Xcode Command Line Tools 或完整 Xcode：
+原生应用需要 macOS 13+ 和 Xcode Command Line Tools，支持 Apple Silicon 与 Intel：
 
-    git clone https://github.com/KurosawaGeeker/keydrop.git
-    cd keydrop
-    ./scripts/build.sh
-    open build/KeyDrop.app
+```sh
+git clone https://github.com/KurosawaGeeker/keydrop.git
+cd keydrop
+./scripts/build.sh
+open build/KeyDrop.app
+```
 
-构建脚本会编译 arm64 和 x86_64 两个架构，合并为 Universal macOS 应用，并生成：
+产物为 `dist/KeyDrop-macOS.zip`。浏览器版的构建和助手安装见 [chrome/README.md](chrome/README.md)。
 
-    dist/KeyDrop-macOS.zip
+原生格式回归测试只使用虚构密钥：
 
-## 设计说明
+```sh
+xcrun swiftc Sources/KeyPayload.swift Tests/KeyPayloadTests.swift -o /tmp/keydrop-payload-tests
+/tmp/keydrop-payload-tests
+```
 
-系统剪贴板中的文件是一个文件引用，而不是一份独立的文本快照。如果每次都复用同一个路径，新的 API Key 会改写旧文件，导致之前复制出去的引用内容发生变化。KeyDrop 通过“时间戳目录 + 随机短 ID”保证每次生成都是不同路径，同时保持文件名始终为 `api-key.txt`。
+## 品牌与开源
 
-## 开源协议
+标志将钥匙和移交箭头组合为一个形状，代表“把 Key 交给 Agent”。[品牌资产与构建说明](brand/README.md)。
 
-本项目以 [MIT License](LICENSE) 发布。
+KeyDrop 以 [MIT License](LICENSE) 发布。感谢 [LINUX DO 社区](https://linux.do) 的交流与支持。
