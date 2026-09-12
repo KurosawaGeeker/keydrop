@@ -9,6 +9,10 @@ await cp(
   path.join(output, "KeyDrop-Chrome"),
   { recursive: true },
 );
+await cp(
+  new URL("./LICENSE", import.meta.url),
+  path.join(output, "KeyDrop-Chrome/LICENSE"),
+);
 const readme = await readFile(new URL("./README.md", import.meta.url), "utf8");
 await writeFile(
   path.join(output, "KeyDrop-Chrome-README.md"),
