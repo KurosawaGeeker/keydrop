@@ -75,6 +75,6 @@ xcrun swiftc Sources/KeyPayload.swift Tests/KeyPayloadTests.swift -o /tmp/keydro
 
 ## 品牌与开源
 
-标志将钥匙和移交箭头组合为一个形状，代表“把 Key 交给 Agent”。[品牌资产与构建说明](brand/README.md)。
+标志是装有三把黑色钥匙的剪贴板，圆环内分别放置模型图标，代表“把多个 Key 交给 Agent”。[矢量资产与构建说明](brand/README.md)。
 
 KeyDrop 以 [MIT License](LICENSE) 发布。感谢 [LINUX DO 社区](https://linux.do) 的交流与支持。

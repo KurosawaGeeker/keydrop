@@ -1,11 +1,11 @@
 {
   "name": "keydrop-chrome",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.3.4",
   "type": "module",
   "scripts": {
     "build:assets": "node build-assets.mjs",
-    "test": "node --test tests/unit.test.js",
+    "test": "node --experimental-vm-modules --test tests/unit.test.js tests/assets.test.js tests/editor-dom.test.js tests/preview-dom.test.js",
     "test:all": "bash tests/run.sh",
     "test:browser": "playwright test"
   },
@@ -13,6 +13,7 @@
     "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "1.63.0",
     "@tabler/icons": "^3.46.0",
+    "jsdom": "26.1.0",
     "prettier": "^3.9.6",
     "sharp": "^0.35.4"
   }

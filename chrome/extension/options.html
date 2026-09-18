@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>KeyDrop 网站设置</title>
+    <link rel="stylesheet" href="editor.css" />
+  </head>
+  <body>
+    <main>
+      <form id="site-form" class="settings-form">
+        <h1>网站设置</h1>
+        <label for="site-origin">网站地址</label>
+        <input
+          id="site-origin"
+          type="url"
+          placeholder="https://platform.example.com"
+          required
+        />
+        <button id="enable">开启快捷入口</button>
+        <p>仅在你允许的网站显示，开启后刷新该网站。</p>
+      </form>
+      <div id="sites"></div>
+      <p id="status" role="status" hidden></p>
+    </main>
+    <script type="module" src="options.js"></script>
+  </body>
+</html>

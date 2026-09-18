@@ -112,7 +112,7 @@ test.afterAll(async () => {
 async function editor() {
   const page = await context.newPage();
   await page.goto(`chrome-extension://${extensionID}/editor.html`);
-  await expect(page.locator("#bridge-status")).toContainText("已连接");
+  await expect(page.locator(".row")).toHaveCount(1);
   return page;
 }
 function copiedPath() {
@@ -135,7 +135,7 @@ async function copiedText() {
 test("real native messaging: Generate copies file, recopy reuses file, formats and remove work", async ({}, info) => {
   const page = await editor();
   await expect(page.locator(".row")).toHaveCount(1);
-  await expect(page.locator("#format-wrap")).toBeVisible();
+  await expect(page.locator("#format")).toBeVisible();
   await page
     .getByLabel("API Key", { exact: true })
     .fill("KEYDROP_LOCAL_QA_ONLY");
@@ -145,7 +145,7 @@ test("real native messaging: Generate copies file, recopy reuses file, formats a
   await page.locator(".reveal").click();
   await expect(page.locator(".value")).toHaveAttribute("type", "password");
   await page.locator("#generate").click();
-  await expect(page.locator("#status")).toContainText("已生成并复制");
+  await expect(page.locator("#ready")).toBeVisible();
   expect(await copiedText()).toBe("KEYDROP_LOCAL_QA_ONLY");
   const first = copiedPath();
   await page.locator("#copy-file").click();
@@ -155,7 +155,7 @@ test("real native messaging: Generate copies file, recopy reuses file, formats a
   await page.getByLabel("API Key", { exact: true }).nth(1).fill("FAKE_SECOND");
   await page.getByLabel("可选名称").nth(0).fill("FIRST_KEY");
   await page.getByLabel("可选名称").nth(1).fill("SECOND_KEY");
-  await page.locator("#format").selectOption("json");
+  await page.locator('input[name="format"][value="json"]').check();
   await page.locator("#generate").click();
   await expect(page.locator("#copy-file")).toHaveText("复制 api-key.json");
   expect(JSON.parse(await copiedText())).toEqual({
@@ -167,7 +167,7 @@ test("real native messaging: Generate copies file, recopy reuses file, formats a
     path: process.env.KEYDROP_PREVIEW_PATH ?? info.outputPath("editor.png"),
     fullPage: true,
   });
-  await page.locator("#format").selectOption("yaml");
+  await page.locator('input[name="format"][value="yaml"]').check();
   await page.locator("#generate").click();
   await expect(page.locator("#copy-file")).toHaveText("复制 api-key.yaml");
   expect(await copiedText()).toContain('"FIRST_KEY": "KEYDROP_LOCAL_QA_ONLY"');
@@ -301,10 +301,10 @@ test("discovery never reads values; synthetic clicks ignored; disabling removes 
 
 test("brand, copy, accessible states and compact layout in both themes", async ({}, info) => {
   const page = await editor();
-  await expect(page.locator("#format")).toHaveValue("txt");
+  await expect(page.locator('input[name="format"][value="txt"]')).toBeChecked();
   await expect(page.locator(".name")).toHaveValue("");
   await expect(page.locator(".value")).toHaveValue("");
-  await expect(page.locator("h1")).toContainText("把 Key 交给你的 Agent");
+  await expect(page.locator(".intro, .local, footer, details")).toHaveCount(0);
   expect(
     await page
       .locator(".brand-mark")
@@ -347,7 +347,7 @@ test("brand, copy, accessible states and compact layout in both themes", async (
   await expect(page.locator("#confirm")).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.locator(".row")).toHaveCount(2);
-  await page.locator("#clear").click();
+  await page.locator(".remove").nth(1).click();
   await page.locator("#confirm-do").click();
   await expect(page.locator(".row")).toHaveCount(1);
   await expect(page.locator(".value")).toHaveValue("");
@@ -368,15 +368,14 @@ test("native-helper failure is visible; no false clipboard success; cleanup requ
   await expect(page.locator("#ready")).toBeHidden();
   await writeFile(registration, saved);
   await page.locator("#generate").click();
-  await expect(page.locator("#status")).toContainText("已生成并复制");
-  await page.locator(".cleanup-settings > summary").click();
+  await expect(page.locator("#ready")).toBeVisible();
   await page.locator("#cleanup-cache").click();
   await expect(page.locator("#confirm")).toBeVisible();
   await page.locator("#cancel").click();
   expect(await copiedText()).toBe("KEYDROP_LOCAL_QA_ONLY");
   await page.locator("#cleanup-cache").click();
   await page.locator("#confirm-do").click();
-  await expect(page.locator("#status")).toContainText("已删除");
+  await expect(page.locator("#status")).toContainText("已清理");
   await page.close();
 });
 
@@ -390,7 +389,7 @@ test("system clipboard accepts Cmd+V as an actual File in an ordinary local webp
   const popup = await editor();
   await popup.locator(".value").fill("KEYDROP_LOCAL_QA_ONLY");
   await popup.locator("#generate").click();
-  await expect(popup.locator("#status")).toContainText("已生成并复制");
+  await expect(popup.locator("#ready")).toBeVisible();
   await page.bringToFront();
   await page.locator("#paste").click();
   await page.keyboard.press("Meta+v");

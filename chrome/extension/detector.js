@@ -151,7 +151,7 @@
     const shadow = host.attachShadow({ mode: "closed" });
     const style = document.createElement("style");
     style.textContent =
-      ":host{all:initial}button{display:grid;place-items:center;width:34px;height:34px;padding:3px;border:1px solid #567d65;border-radius:9px;background:#c6ebd5;color:#244732;cursor:pointer}button:hover{background:#b3dfc5}button:focus-visible{outline:2px solid #347a50;outline-offset:3px}button:disabled{opacity:.6}img{width:28px;height:28px;display:block}svg{width:20px;height:20px;stroke-width:1.8}span{position:absolute;right:0;top:40px;z-index:2147483647;background:#202621;color:#f7f8f5;padding:10px 12px;border-radius:9px;width:220px;font:12px/1.6 system-ui}span:empty{display:none}";
+      ":host{all:initial}button{display:grid;place-items:center;width:34px;height:34px;padding:3px;border:1px solid #858585;border-radius:9px;background:#ffffff;color:#242424;cursor:pointer}button:hover{background:#ededed}button:focus-visible{outline:2px solid #242424;outline-offset:3px}button:disabled{opacity:.6}img{width:28px;height:28px;display:block}svg{width:20px;height:20px;stroke-width:1.8}span{position:absolute;right:0;top:40px;z-index:2147483647;background:#242424;color:#ffffff;padding:10px 12px;border-radius:9px;width:220px;font:12px/1.6 system-ui}span:empty{display:none}";
     const action = document.createElement("button");
     action.type = "button";
     // Paint bundled artwork without fetching a URL or reading anything from the page.

@@ -1,14 +1,15 @@
 # KeyDrop identity
 
-Drop means drag-and-drop: handing a key to an agent, not a water droplet.
+Drop means drag-and-drop: handing keys to an agent, not a water droplet.
 
-The mark merges a key aperture and tooth with a rightward transfer arrow. One compact silhouette expresses the handoff. It is used consistently in the browser toolbar, editor header and contextual page action.
+The mark is a clipboard holding three horizontal black keys. Each retains a circular bow with an OpenAI, Claude or Gemini symbol inside; small, distinct teeth express multiple keys. Keys are aligned and equally spaced. No accent color is added to the artwork or page badge.
 
-- Master: `keydrop-mark.png`, transparent raster artwork generated with OpenAI image generation for this project.
-- Palette: graphite `#202621`, warm white `#f7f8f5`, mint `#c6ebd5`.
-- Typeface: local system UI; no downloaded fonts.
-- UI icons: Tabler Icons (MIT), selected and bundled at build time; license ships with the extension.
-- Runtime assets: generated with `cd chrome && npm ci && npm run build:assets`.
-- Page action: Canvas draws bundled pixels, so no image URL, external asset or website CSP exception is required.
+- Canonical master: `keydrop-mark.svg`, editable vector geometry with embedded paths and license notice. No linked resources, fonts or scripts.
+- `keydrop-mark.png` is a generated compatibility export, not another editable master.
+- Build: `cd chrome && npm run build:assets`. Generates every toolbar size, editor artwork and page-badge pixels from the SVG without network requests.
+- Toolbar/editor icons use white backing for visibility on dark browser chrome.
+- Page action: Canvas draws bundled pixels, without image URLs or website CSP exceptions.
+- Model icon paths: [Lobe Icons](https://github.com/lobehub/lobe-icons), MIT; see `LOBE-ICONS-LICENSE.txt`, also shipped with extension assets.
+- UI icons: Tabler Icons (MIT), bundled at build time with their license.
 
-Art direction: a flat abstract key aperture, a short shaft and one tooth, transitioning into a transfer arrow; no letters, droplets, gradients, shadows, or illustrative background. This is new artwork, not a trademark clearance claim.
+Model names and marks identify their respective providers. This is not an official joint logo or endorsement. The icon library license is not a trademark clearance claim.

@@ -46,7 +46,7 @@ async function openEditor(tab, value) {
         url: `${editorURL}?${query}`,
         type: "popup",
         width: 550,
-        height: 770,
+        height: 500,
       });
       await chrome.action.setBadgeText({ text: "" });
     } catch (error) {

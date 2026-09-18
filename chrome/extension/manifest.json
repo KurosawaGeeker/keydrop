@@ -1,7 +1,8 @@
 {
   "manifest_version": 3,
   "name": "KeyDrop - Keys to your agent",
-  "version": "0.3.0",
+  "version": "0.3.4",
+  "options_ui": { "page": "options.html", "open_in_tab": true },
   "minimum_chrome_version": "120",
   "description": "把 Key 交给你的 Agent。在本机生成 TXT、JSON 或 YAML 密钥文件，直接复制或拖拽。在网站复制按钮旁，一键生成并复制。",
   "permissions": [

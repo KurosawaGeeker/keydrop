@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta name="color-scheme" content="light dark" />
-    <title>KeyDrop · 把 Key 交给你的 Agent</title>
+    <title>KeyDrop</title>
     <link rel="icon" type="image/png" href="assets/icon-32.png" />
     <link rel="stylesheet" href="editor.css" />
   </head>
@@ -19,31 +19,27 @@
           height="44"
         /><span>KeyDrop</span>
       </div>
-      <span class="local"><span data-icon="shield-lock"></span>本机生成</span>
     </header>
     <main>
-      <section class="editor" aria-labelledby="editor-title">
-        <div class="intro">
-          <h1 id="editor-title">
-            把 Key 交给你的 Agent<span class="accent-period">.</span>
-          </h1>
-          <p>生成一个文件，粘贴或拖入你正在使用的工具。</p>
-        </div>
-        <div class="editor-toolbar">
-          <h2>你的密钥 <span id="count">1 个</span></h2>
-          <div id="format-wrap">
-            <label for="format">格式</label
-            ><select id="format">
-              <option value="txt">TXT</option>
-              <option value="json">JSON</option>
-              <option value="yaml">YAML</option>
-            </select>
-          </div>
-        </div>
+      <section class="editor" aria-label="密钥文件">
+        <fieldset id="format" aria-label="文件格式">
+          <label
+            ><input type="radio" name="format" value="txt" checked /><span
+              >TXT</span
+            ></label
+          >
+          <label
+            ><input type="radio" name="format" value="json" /><span
+              >JSON</span
+            ></label
+          >
+          <label
+            ><input type="radio" name="format" value="yaml" /><span
+              >YAML</span
+            ></label
+          >
+        </fieldset>
         <div id="rows"></div>
-        <p id="format-hint" class="hint">
-          名称留空，TXT 只保留 Key；多个 Key 按行分隔。
-        </p>
         <div class="actions">
           <button id="read">
             <span data-icon="clipboard"></span>读取剪贴板</button
@@ -51,9 +47,18 @@
             <span data-icon="file"></span>生成并复制文件
           </button>
         </div>
-        <p id="status" role="status" aria-live="polite">
-          粘贴一个 Key，就可以开始。
-        </p>
+        <section
+          id="site-permission"
+          class="site-permission"
+          aria-labelledby="site-permission-title"
+        >
+          <div>
+            <h2 id="site-permission-title">本网站快捷入口</h2>
+            <p id="site-permission-state">正在读取网站权限…</p>
+          </div>
+          <button id="site-toggle" type="button" disabled>读取中</button>
+        </section>
+        <p id="status" role="status" aria-live="polite" hidden></p>
         <div id="ready" hidden>
           <div class="file-result">
             <span class="file-symbol" data-icon="file"></span>
@@ -71,58 +76,12 @@
             ></span>
           </div>
         </div>
-        <div class="editor-foot">
-          <p id="bridge-status" role="status">正在连接本机助手…</p>
-          <button id="clear" class="text-button">清空输入</button>
-        </div>
       </section>
-      <details class="settings site">
-        <summary>
-          <span
-            ><strong>网站快捷入口</strong
-            ><small>在复制按钮旁，一键交接</small></span
-          ><span data-icon="chevron-down"></span>
-        </summary>
-        <div class="settings-body">
-          <p id="site-name">
-            从目标网站的工具栏打开 KeyDrop，即可为该网站开启。
-          </p>
-          <button id="enable" hidden>为此网站开启</button
-          ><button id="disable" hidden>关闭此网站入口</button>
-          <p class="hint">
-            点击复制按钮旁的 KeyDrop
-            图标，直接生成并复制文件。点击原复制按钮，则打开编辑窗口。
-          </p>
-          <p class="hint">只在你点击时读取对应字段，不后台读取剪贴板。</p>
-          <details class="site-list">
-            <summary>管理已开启的网站</summary>
-            <div id="sites"></div>
-          </details>
-        </div>
-      </details>
-      <details class="settings cleanup-settings">
-        <summary>
-          <span
-            ><strong>文件清理</strong
-            ><small>用完的密钥文件，随时清理</small></span
-          ><span data-icon="chevron-down"></span>
-        </summary>
-        <div class="settings-body">
-          <p class="hint">
-            关闭窗口会丢弃输入，已生成的文件仍保留在本机。清理前会再次确认。
-          </p>
-          <div class="cleanup-actions">
-            <button id="cleanup-cache">
-              <span data-icon="trash"></span>清理临时文件</button
-            ><button id="cleanup">清理下载副本</button>
-          </div>
-        </div>
-      </details>
-      <footer>
-        <p>
-          KeyDrop 不上传密钥。将文件提交给在线服务时，<br />该服务仍可能读取文件中的明文。
-        </p>
-      </footer>
+      <div class="utility-actions">
+        <button id="cleanup-cache">
+          <span data-icon="trash"></span>文件清理
+        </button>
+      </div>
     </main>
     <dialog
       id="confirm"
@@ -131,6 +90,10 @@
     >
       <h2 id="confirm-title"></h2>
       <p id="confirm-body"></p>
+      <label id="cleanup-options" hidden>
+        <input id="include-downloads" type="checkbox" />
+        同时清理下载副本
+      </label>
       <div class="actions">
         <button id="cancel">取消</button
         ><button id="confirm-do" class="danger">确认</button>
@@ -139,11 +102,10 @@
     <template id="row-template">
       <div class="row">
         <label class="name-field"
-          ><span>名称<span class="optional"> · 选填</span></span
+          ><span>名称</span
           ><input
             class="name"
             aria-label="可选名称"
-            placeholder="留空"
             autocomplete="off"
             spellcheck="false" /></label
         ><span class="colon" aria-hidden="true">:</span
