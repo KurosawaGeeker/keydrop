@@ -5,13 +5,13 @@ import Darwin
 @MainActor
 final class KeyDropModel: ObservableObject {
     @Published var entries = [KeyEntry()]
-    @Published var format: KeyFormat = .yaml
-    @Published var status = "等待输入 API Key"
+    @Published var format: KeyFormat = .txt
+    @Published var status = ""
     @Published var statusIsError = false
     var hasNames: Bool { entries.contains { !$0.name.isEmpty } }
 
     var filename: String {
-        hasNames ? "api-key.\(format == .json ? "json" : "yaml")" : "api-key.txt"
+        "api-key.\(format.rawValue.lowercased())"
     }
 
     private let outputRootURL = KeyCache.root
@@ -98,72 +98,47 @@ struct KeyDropView: View {
     @State private var showingCleanup = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 22) {
-            HStack(spacing: 12) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    Color(red: 0.48, green: 0.32, blue: 1.0),
-                                    Color(red: 0.25, green: 0.58, blue: 1.0)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                    Image(systemName: "key.fill")
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundStyle(.white)
+        VStack(alignment: .leading, spacing: 18) {
+            HStack {
+                if let image = NSImage(named: "KeyDropMark") {
+                    Image(nsImage: image)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 52, height: 52)
+                } else {
+                    Image(systemName: "rectangle.portrait.on.rectangle.portrait")
+                        .font(.system(size: 38))
+                        .frame(width: 52, height: 52)
                 }
-                .frame(width: 44, height: 44)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("KeyDrop")
-                        .font(.system(size: 22, weight: .bold, design: .rounded))
-                    Text("把 API Key 变成可粘贴的文件")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
-                }
-
+                Text("KeyDrop")
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
                 Spacer()
             }
 
-            VStack(alignment: .leading, spacing: 8) {
-                Text("API KEY")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.secondary)
-                    .tracking(0.7)
-
-                ScrollViewReader { proxy in
-                    ScrollView {
-                        VStack(spacing: 8) {
-                            ForEach($model.entries) { $entry in
-                                entryRow($entry).id(entry.id)
-                            }
-                        }
-                        .padding(1)
-                    }
-                    .frame(height: CGFloat(min(model.entries.count, 5)) * 54 - 8)
-                    .onChange(of: model.entries.count) { _ in
-                        if let id = focusedRow { proxy.scrollTo(id) }
+            HStack {
+                Spacer()
+                Picker("文件格式", selection: $model.format) {
+                    ForEach(KeyFormat.allCases, id: \.self) { format in
+                        Text(format.rawValue).tag(format)
                     }
                 }
+                .labelsHidden()
+                .pickerStyle(.segmented)
+                .frame(width: 240)
+            }
 
-                if model.hasNames {
-                    HStack {
-                        Text("文件格式").foregroundStyle(.secondary)
-                        Picker("文件格式", selection: $model.format) {
-                            ForEach(KeyFormat.allCases, id: \.self) { format in
-                                Text(format.rawValue).tag(format)
-                            }
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(spacing: 8) {
+                        ForEach($model.entries) { $entry in
+                            entryRow($entry).id(entry.id)
                         }
-                        .labelsHidden()
-                        .pickerStyle(.segmented)
-                        .frame(width: 140)
-                        Spacer()
                     }
-                    .font(.system(size: 12))
+                    .padding(1)
+                }
+                .frame(height: CGFloat(min(model.entries.count, 5)) * 80)
+                .onChange(of: model.entries.count) { _ in
+                    if let id = focusedRow { proxy.scrollTo(id) }
                 }
             }
 
@@ -189,25 +164,27 @@ struct KeyDropView: View {
             }
             .controlSize(.large)
 
-            HStack(spacing: 7) {
-                Image(systemName: model.statusIsError ? "exclamationmark.circle.fill" : "checkmark.circle.fill")
-                    .foregroundStyle(model.statusIsError ? Color.orange : Color.green)
-                Text(model.status)
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                Spacer()
-                Text(model.filename)
-                    .font(.system(size: 11, design: .monospaced))
-                    .foregroundStyle(.tertiary)
+            if !model.status.isEmpty {
+                HStack(spacing: 7) {
+                    Image(systemName: model.statusIsError ? "exclamationmark.circle.fill" : "checkmark.circle.fill")
+                        .foregroundStyle(model.statusIsError ? Color.orange : Color.green)
+                    Text(model.status)
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                    Spacer()
+                    Text(model.filename)
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundStyle(.tertiary)
+                }
             }
             HStack {
                 Button {
                     showingCleanup = true
                 } label: {
-                    Label("清理历史文件", systemImage: "trash")
+                    Label("文件清理", systemImage: "trash")
                 }
-                .buttonStyle(.borderless)
+                .buttonStyle(.bordered)
                 .alert("清理所有历史密钥文件？", isPresented: $showingCleanup) {
                     Button("取消", role: .cancel) {}
                     Button("确认清理", role: .destructive) { model.cleanHistory() }
@@ -217,18 +194,9 @@ struct KeyDropView: View {
                 Spacer()
             }
         }
-        .padding(26)
-        .frame(width: 470)
-        .background(
-            LinearGradient(
-                colors: [
-                    Color(nsColor: .windowBackgroundColor),
-                    Color.accentColor.opacity(0.035)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-        )
+        .padding(24)
+        .frame(width: 550)
+        .background(Color(nsColor: .windowBackgroundColor))
         .onAppear {
             focusedRow = model.entries.first?.id
             activeRow = focusedRow
@@ -255,66 +223,91 @@ struct KeyDropView: View {
 
     private func entryRow(_ binding: Binding<KeyEntry>) -> some View {
         let entry = binding.wrappedValue
-        return HStack(spacing: 8) {
-            TextField("名称", text: binding.name)
-                .frame(width: 64)
-                .help("可选；留空时生成纯文本")
-                .accessibilityLabel("可选名称")
-            Text(":").foregroundStyle(.tertiary)
-            Group {
-                if entry.isVisible {
-                    TextField("粘贴或输入 API Key", text: binding.value)
-                } else {
-                    SecureField("粘贴或输入 API Key", text: binding.value)
-                }
+        return HStack(alignment: .bottom, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("名称").fieldLabel()
+                TextField("", text: binding.name)
+                    .textFieldStyle(.plain)
+                    .frame(height: 36)
+                    .padding(.horizontal, 12)
+                    .background(Color(nsColor: .controlBackgroundColor))
+                    .clipShape(Capsule())
+                    .overlay(Capsule().stroke(Color.primary.opacity(0.16), lineWidth: 1))
+                    .help("可选；留空时生成纯文本")
+                    .accessibilityLabel("可选名称")
             }
-            .focused($focusedRow, equals: entry.id)
-            .accessibilityLabel("API Key")
-            Button {
+            .frame(width: 112)
+            Text(":")
+                .foregroundStyle(.secondary)
+                .padding(.bottom, 10)
+            VStack(alignment: .leading, spacing: 6) {
+                Text("API Key").fieldLabel()
+                Group {
+                    if entry.isVisible {
+                        TextField("粘贴你的 Key", text: binding.value)
+                    } else {
+                        SecureField("粘贴你的 Key", text: binding.value)
+                    }
+                }
+                .focused($focusedRow, equals: entry.id)
+                .textFieldStyle(.plain)
+                .font(.system(size: 13, design: .monospaced))
+                .frame(height: 36)
+                .padding(.horizontal, 12)
+                .background(Color(nsColor: .controlBackgroundColor))
+                .clipShape(Capsule())
+                .overlay(Capsule().stroke(focusedRow == entry.id ? Color.primary.opacity(0.75) : Color.primary.opacity(0.16), lineWidth: focusedRow == entry.id ? 2 : 1))
+                .accessibilityLabel("API Key")
+            }
+            .frame(maxWidth: .infinity)
+            iconButton(systemName: entry.isVisible ? "eye.slash" : "eye", label: entry.isVisible ? "隐藏 API Key" : "显示 API Key") {
                 binding.isVisible.wrappedValue.toggle()
                 focusedRow = entry.id
-            } label: {
-                Image(systemName: entry.isVisible ? "eye.slash" : "eye")
-                    .frame(width: 24, height: 24)
             }
-            .help(entry.isVisible ? "隐藏 API Key" : "显示 API Key")
-            .accessibilityLabel(entry.isVisible ? "隐藏 API Key" : "显示 API Key")
             if model.entries.count > 1 {
-                Button {
+                iconButton(systemName: "minus", label: "移除这一行") {
                     if entry.name.isEmpty && entry.value.isEmpty { removeRow(entry.id) }
                     else {
                         pendingRemoval = entry.id
                         showingRemoval = true
                     }
-                } label: {
-                    Image(systemName: "minus").frame(width: 20, height: 24)
                 }
-                .help("移除这一行")
-                .accessibilityLabel("移除这一行")
             }
-            Button {
+            iconButton(systemName: "plus", label: "添加 API Key", emphasized: true) {
                 let newEntry = KeyEntry()
                 let index = model.entries.firstIndex { $0.id == entry.id } ?? 0
                 model.entries.insert(newEntry, at: index + 1)
                 focusedRow = newEntry.id
                 activeRow = newEntry.id
-            } label: {
-                Image(systemName: "plus").frame(width: 20, height: 24)
             }
-            .help("添加 API Key")
-            .accessibilityLabel("添加 API Key")
         }
-        .textFieldStyle(.plain)
-        .buttonStyle(.plain)
-        .font(.system(size: 13, design: .monospaced))
         .padding(.horizontal, 12)
-        .frame(height: 44)
+        .padding(.vertical, 10)
         .background(Color(nsColor: .controlBackgroundColor))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(focusedRow == entry.id ? Color.accentColor.opacity(0.8) : Color.primary.opacity(0.1), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(focusedRow == entry.id ? Color.primary.opacity(0.75) : Color.primary.opacity(0.2), lineWidth: focusedRow == entry.id ? 2 : 1)
         }
+    }
+
+    private func iconButton(systemName: String, label: String, emphasized: Bool = false, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .frame(width: 34, height: 34)
+        }
+        .buttonStyle(.plain)
+        .background(emphasized ? Color(nsColor: .controlBackgroundColor) : .clear)
+        .clipShape(Circle())
+        .overlay(Circle().stroke(Color.primary.opacity(emphasized ? 0.16 : 0), lineWidth: 1))
+        .help(label)
+        .accessibilityLabel(label)
+    }
+}
+
+private extension View {
+    func fieldLabel() -> some View {
+        self.font(.system(size: 12, weight: .regular)).foregroundStyle(.secondary)
     }
 }
 

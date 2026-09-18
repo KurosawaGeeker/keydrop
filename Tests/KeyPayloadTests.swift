@@ -15,8 +15,8 @@ struct KeyPayloadTests {
             } catch { fatalError("Unexpected error type") }
         }
         let raw = "demo-key-with-spaces \n"
-        let single = try encode([KeyEntry(value: raw)])
-        let multiple = try encode([KeyEntry(value: "demo-a"), KeyEntry(value: "demo-b")])
+        let single = try encode([KeyEntry(value: raw)], .txt)
+        let multiple = try encode([KeyEntry(value: "demo-a"), KeyEntry(value: "demo-b")], .txt)
         precondition(single == raw)
         precondition(multiple == "demo-a\ndemo-b")
         let rows = [KeyEntry(name: "OPENAI_API_KEY", value: "demo-\"quoted\"\\value\nnext"), KeyEntry(name: "中文", value: "true")]
@@ -28,6 +28,10 @@ struct KeyPayloadTests {
         precondition(yaml == "\"a:b\": \"true\"")
         let lineBreaks = try encode([KeyEntry(name: "breaks", value: "\u{0085}\u{2028}\u{2029}")])
         precondition(lineBreaks == "\"breaks\": \"\\u0085\\u2028\\u2029\"")
+        let unnamedJSON = try encode([KeyEntry(value: "demo")], .json)
+        let unnamedYAML = try encode([KeyEntry(value: "a"), KeyEntry(value: "b")], .yaml)
+        precondition(unnamedJSON == "\"demo\"")
+        precondition(unnamedYAML == "- \"a\"\n- \"b\"")
         rejects([])
         rejects([KeyEntry()])
         rejects([KeyEntry(value: "demo"), KeyEntry()])
