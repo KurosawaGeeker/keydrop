@@ -2,9 +2,9 @@
 
 # KeyDrop
 
-**把 Key 交给你的 Agent。**
+**把 Key 安全地交给你的 Agent。**
 
-将 API Key 生成为文件，直接复制或拖入支持附件的工具。不用再打开编辑器、新建文件、保存，再去找它。
+将 API Key 复制为文件，然后*相对安全（相比于直接把明文丢进去*地放入你的 agent 输入框。
 
 KeyDrop 的 Drop 是 drag-and-drop：拖入、粘贴、交接。支持原生 macOS 应用，以及 Chrome / EgoLite 浏览器扩展。
 
